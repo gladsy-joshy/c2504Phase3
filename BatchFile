@@ -22,7 +22,11 @@ setlocal
 REM Set source and backup directory
 set "SOURCE=C:\TestFiles"
 set "BACKUP_ROOT=D:\Backups"
-set "DATE=%date:~10,4%%date:~4,2%%date:~7,2%"  REM Format: YYYYMMDD
+
+REM Get current date in YYYYMMDD format using WMIC
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "DATETIME=%%I"
+set "DATE=%DATETIME:~0,8%"  REM Format: YYYYMMDD
+
 set "BACKUP_DIR=%BACKUP_ROOT%\%DATE%"
 set "LOG_FILE=%BACKUP_DIR%\backup_log.txt"
 
@@ -42,8 +46,8 @@ for %%F in ("%SOURCE%\*") do (
 
 REM Log the backup information
 (
-    echo Backup Date: %date%
-    echo Backup Time: %time%
+    echo Backup Date: %DATE%
+    echo Backup Time: %TIME%
     echo Number of files copied: %FILE_COUNT%
 ) >> "%LOG_FILE%"
 
