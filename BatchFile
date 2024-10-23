@@ -51,15 +51,18 @@ REM Log the backup information
     echo Number of files copied: %FILE_COUNT%
 ) >> "%LOG_FILE%"
 
-REM Cleanup old backups (older than 7 days)
+REM Cleanup old backups (older than 1 days)
 for /d %%D in ("%BACKUP_ROOT%\*") do (
     REM Get the last modified date of the directory
-    forfiles /p "%%D" /d -7 >nul 2>&1
+    forfiles /p "%%D" /d -1 >nul 2>&1
     if not errorlevel 1 (
         echo Deleting old backup: %%D
         rmdir /s /q "%%D"
     )
 )
+
+echo Backup completed successfully!
+pause
 
 echo Backup completed successfully!
 pause
