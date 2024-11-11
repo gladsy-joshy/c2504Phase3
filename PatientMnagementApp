@@ -483,6 +483,327 @@ namespace PatientManagementApp
 
 
 
+<Window x:Class="PatientManagementApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Patient Management" Height="450" Width="800">
+    <Grid>
+        <!-- Your existing controls -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <!-- Your navigation buttons here -->
+        </StackPanel>
+
+        <!-- Message display area -->
+        <TextBlock Name="MessageTextBlock" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" FontSize="16" Foreground="Green" Visibility="Collapsed"/>
+        
+        <ContentControl Name="ContentArea" Grid.Row="1" Margin="10"/>
+    </Grid>
+</Window
+
+
+
+
+
+
+
+
+
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading; // For DispatcherTimer
+
+namespace PatientManagementApp
+{
+    public partial class MainWindow : Window
+    {
+        private readonly PatientViewModel _viewModel = new PatientViewModel();
+        private readonly DispatcherTimer _timer;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel.PatientRegistered += OnPatientRegistered;
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+
+            // Initialize the timer
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromSeconds(3); // 3 seconds to hide the message
+            _timer.Tick += (sender, e) => HideMessage();
+        }
+
+        private void btnShowRegistration_Click(object sender, RoutedEventArgs e)
+        {
+            var registration = new PatientRegistration { DataContext = _viewModel };
+            ContentArea.Content = registration;
+        }
+
+        private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
+        {
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = _viewModel };
+            ContentArea.Content = appointmentConfirmation;
+        }
+
+        private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            var dashboard = new PatientDashboard { DataContext = _viewModel };
+            dashboard.BackToMainRequested += Dasboard_BackToMainRequested;
+            ContentArea.Content = dashboard;
+        }
+
+        private void Dasboard_BackToMainRequested(object sender, EventArgs e)
+        {
+            NavigateBackToMainScreen();
+        }
+
+        private void OnPatientRegistered(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            ShowMessage($"Patient {patient.Name} registered successfully!");
+        }
+
+        private void OnAppointmentConfirmed(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            ShowMessage($"Appointment for {patient.Name} confirmed and added to the Patient Dashboard!");
+        }
+
+        private void ShowMessage(string message)
+        {
+            MessageTextBlock.Text = message;
+            MessageTextBlock.Visibility = Visibility.Visible;
+            _timer.Start(); // Start the timer to hide the message after 3 seconds
+        }
+
+        private void HideMessage()
+        {
+            MessageTextBlock.Visibility = Visibility.Collapsed;
+            _timer.Stop(); // Stop the timer
+        }
+
+        private void NavigateBackToMainScreen()
+        {
+            ContentArea.Content = null;
+        }
+    }
+}
+
+
+
+
+
+
+using System;
+using System.Windows;
+using System.Windows.Threading;
+
+namespace PatientManagementApp
+{
+    public partial class MainWindow : Window
+    {
+        private readonly PatientViewModel _viewModel = new PatientViewModel();
+        private readonly DispatcherTimer _timer;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel.PatientRegistered += OnPatientRegistered;
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+
+            // Initialize the timer
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3) // Message will be visible for 3 seconds
+            };
+            _timer.Tick += Timer_Tick;
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            HideMessage();
+            _timer.Stop(); // Stop the timer after hiding the message
+        }
+
+        private void ShowMessage(string message)
+        {
+            MessageTextBlock.Text = message;
+            MessageTextBlock.Visibility = Visibility.Visible;
+            _timer.Start(); // Start the timer to hide the message
+        }
+
+        private void HideMessage()
+        {
+            MessageTextBlock.Visibility = Visibility.Collapsed;
+            MessageTextBlock.Text = string.Empty;
+        }
+
+        private void OnPatientRegistered(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            ShowMessage($"Patient {patient.Name} registered successfully!");
+            NavigateBackToMainScreen();
+        }
+
+        private void OnAppointmentConfirmed(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            ShowMessage($"Appointment for {patient.Name} confirmed and added to the Patient Dashboard!");
+            NavigateBackToMainScreen();
+        }
+
+        private void NavigateBackToMainScreen()
+        {
+            ContentArea.Content = null;
+            NavigationPanel.Visibility = Visibility.Visible;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+<UserControl x:Class="PatientManagementApp.Views.AppointmentConfirmation"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Height="300" Width="400">
+    <Grid>
+        <!-- Message display area -->
+        <TextBlock Name="MessageTextBlock" HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,10,0,0" FontSize="16" Foreground="Green" Visibility="Collapsed" />
+        
+        <!-- Other UI elements -->
+    </Grid>
+</UserControl>
+
+
+
+
+
+
+<UserControl x:Class="PatientManagementApp.Views.PatientDashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Height="300" Width="400">
+    <Grid>
+        <!-- Message display area -->
+        <TextBlock Name="MessageTextBlock" HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,10,0,0" FontSize="16" Foreground="Green" Visibility="Collapsed" />
+        
+        <!-- Other UI elements -->
+    </Grid>
+</UserControl>
+
+
+
+
+
+
+
+
+
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+
+namespace PatientManagementApp.Views
+{
+    public partial class AppointmentConfirmation : UserControl
+    {
+        private readonly DispatcherTimer _timer;
+
+        public AppointmentConfirmation()
+        {
+            InitializeComponent();
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3) // Message visible for 3 seconds
+            };
+            _timer.Tick += Timer_Tick;
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            HideMessage();
+            _timer.Stop();
+        }
+
+        public void ShowMessage(string message)
+        {
+            MessageTextBlock.Text = message;
+            MessageTextBlock.Visibility = Visibility.Visible;
+            _timer.Start();
+        }
+
+        private void HideMessage()
+        {
+            MessageTextBlock.Visibility = Visibility.Collapsed;
+            MessageTextBlock.Text = string.Empty;
+        }
+    }
+}
+
+
+
+
+
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+
+namespace PatientManagementApp.Views
+{
+    public partial class PatientDashboard : UserControl
+    {
+        private readonly DispatcherTimer _timer;
+
+        public PatientDashboard()
+        {
+            InitializeComponent();
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            _timer.Tick += Timer_Tick;
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            HideMessage();
+            _timer.Stop();
+        }
+
+        public void ShowMessage(string message)
+        {
+            MessageTextBlock.Text = message;
+            MessageTextBlock.Visibility = Visibility.Visible;
+            _timer.Start();
+        }
+
+        private void HideMessage()
+        {
+            MessageTextBlock.Visibility = Visibility.Collapsed;
+            MessageTextBlock.Text = string.Empty;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
