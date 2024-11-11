@@ -802,6 +802,78 @@ namespace PatientManagementApp.Views
 
 
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+
+namespace PatientManagementApp.Views
+{
+    /// <summary>
+    /// Interaction logic for PatientDashboard.xaml
+    /// </summary>
+    public partial class PatientDashboard : UserControl
+    {
+        private readonly DispatcherTimer _timer;
+
+        public Action<object, EventArgs> BackToMainRequested { get; internal set; }
+
+        public PatientDashboard()
+        {
+            InitializeComponent();
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            _timer.Tick += Timer_Tick;
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            HideMessage();
+            _timer.Stop();
+        }
+
+        public void ShowMessage(string message)
+        {
+            MessageTextBlock.Text = message;
+            MessageTextBlock.Visibility = Visibility.Visible;
+            _timer.Start();
+        }
+
+        private void HideMessage()
+        {
+            MessageTextBlock.Visibility = Visibility.Collapsed;
+            MessageTextBlock.Text = string.Empty;
+        }
+    }
+
+    private void BtnBackToMain_Click(object sender, RoutedEventArgs e)
+        {
+            BackToMainRequested?.Invoke(this, EventArgs.Empty);
+        }
+    }
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS0103	The name 'BackToMainRequested' does not exist in the current context	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\Views\PatientDashboard.xaml.cs	60	
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\Views\PatientDashboard.xaml.cs	58	
+
+
+
+
+
+
 
 
 
