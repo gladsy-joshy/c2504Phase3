@@ -736,3 +736,35 @@ solve the error here and give thecorrected code
 
 
 
+
+
+
+
+
+
+
+
+
+using System;
+
+namespace PatientManagementApp.Model
+{
+    public class Patient
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public DateTime DOB { get; set; }
+        public string Address { get; set; }
+        public string Slot { get; set; }
+        public DateTime BookingDate { get; set; }
+        public DateTime AppointmentDate { get; set; }
+
+        // Optionally, override the ToString() method for debugging
+        public override string ToString()
+        {
+            return $"Name: {Name}, DOB: {DOB:yyyy-MM-dd}, BookingDate: {BookingDate:yyyy-MM-dd}, AppointmentDate: {AppointmentDate:yyyy-MM-dd}";
+        }
+    }
+}
+
+
