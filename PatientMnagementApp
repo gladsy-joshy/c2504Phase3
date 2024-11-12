@@ -581,3 +581,158 @@ namespace PatientManagementApp.Views
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace PatientManagementApp.Model
+{
+    public class Patient
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public string DOB => DOB.ToString("yyyy-MM-dd");
+        public string Address { get; set; }
+        public string Slot { get; set; }
+        public string BookingDate => BookingDate.ToString("yyyy-MM-dd");
+        public string AppointmentDate => AppointmentDate.ToString("yyyy-MM-dd");
+
+        
+    }
+
+}
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using PatientManagementApp.Model;
+using PatientManagementApp.ViewModel;
+
+namespace PatientManagementApp.Views
+{
+    /// <summary>
+    /// Interaction logic for PatientRegistration.xaml
+    /// </summary>
+    public partial class PatientRegistration : UserControl
+    {
+        public PatientRegistration()
+        {
+            InitializeComponent();
+        }
+
+        private void NameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(NameTextBox.Text) || !NameTextBox.Text.All(char.IsLetter))
+            {
+                NameErrorTextBlock.Text = "Enter name with alphabets only.";
+                NameErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                NameErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void AgeTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(AgeTextBox.Text) || !int.TryParse(AgeTextBox.Text, out int age) || age < 0)
+            {
+                AgeErrorTextBlock.Text = "Enter a valid age (positive integer).";
+                AgeErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                AgeErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void DOBPicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DOBPicker.SelectedDate == null || DOBPicker.SelectedDate.Value >= DateTime.Now)
+            {
+                DOBErrorTextBlock.Text = "Date of Birth must be less than today.";
+                DOBErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                DOBErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void BookingDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (BookingDatePicker.SelectedDate == null || BookingDatePicker.SelectedDate.Value < DateTime.Now.Date)
+            {
+                BookingDateErrorTextBlock.Text = "Booking Date must be today or later.";
+                BookingDateErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BookingDateErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void btnRegister_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is IPatientViewModel viewModel)
+            {
+                var patient = new Patient
+                {
+                    Name = NameTextBox.Text,
+                    Age = int.Parse(AgeTextBox.Text),
+                    DOB = (DOBPicker.SelectedDate ?? DateTime.Today).Date, // Ensure only date is stored
+                    Address = AddressTextBox.Text,
+                    Slot = SlotComboBox.Text,
+                    BookingDate = (BookingDatePicker.SelectedDate ?? DateTime.Today).Date, // Ensure only date is stored
+                    AppointmentDate = DateTime.Today.AddDays(1).Date // Default to tomorrow, only date
+                };
+
+                viewModel.RegisterPatient(patient);
+            }
+        }
+    }
+}
+
+solve the error here and give thecorrected code 
+
+
+
+
