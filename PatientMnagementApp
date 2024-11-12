@@ -484,5 +484,100 @@ namespace PatientManagementApp
 
 
 
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using PatientManagementApp.Model;
+using PatientManagementApp.ViewModel;
+
+namespace PatientManagementApp.Views
+{
+    /// <summary>
+    /// Interaction logic for PatientRegistration.xaml
+    /// </summary>
+    public partial class PatientRegistration : UserControl
+    {
+        public PatientRegistration()
+        {
+            InitializeComponent();
+        }
+
+        private void NameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(NameTextBox.Text) || !NameTextBox.Text.All(char.IsLetter))
+            {
+                NameErrorTextBlock.Text = "Enter name with alphabets only.";
+                NameErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                NameErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void AgeTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(AgeTextBox.Text) || !int.TryParse(AgeTextBox.Text, out int age) || age < 0)
+            {
+                AgeErrorTextBlock.Text = "Enter a valid age (positive integer).";
+                AgeErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                AgeErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void DOBPicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DOBPicker.SelectedDate == null || DOBPicker.SelectedDate.Value >= DateTime.Now)
+            {
+                DOBErrorTextBlock.Text = "Date of Birth must be less than today.";
+                DOBErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                DOBErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void BookingDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (BookingDatePicker.SelectedDate == null || BookingDatePicker.SelectedDate.Value < DateTime.Now.Date)
+            {
+                BookingDateErrorTextBlock.Text = "Booking Date must be today or later.";
+                BookingDateErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BookingDateErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void btnRegister_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is IPatientViewModel viewModel)
+            {
+                var patient = new Patient
+                {
+                    Name = NameTextBox.Text,
+                    Age = int.Parse(AgeTextBox.Text),
+                    DOB = (DOBPicker.SelectedDate ?? DateTime.Now).Date, // Ensure only date is stored
+                    Address = AddressTextBox.Text,
+                    Slot = SlotComboBox.Text,
+                    BookingDate = (BookingDatePicker.SelectedDate ?? DateTime.Now).Date, // Ensure only date is stored
+                    AppointmentDate = DateTime.Now.AddDays(1).Date // Default to tomorrow, only date
+                };
+
+                viewModel.RegisterPatient(patient);
+            }
+        }
+    }
+}
+
+
+
+
+
 
 
