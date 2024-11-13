@@ -502,7 +502,115 @@ namespace PatientManagementApp
 
 
 
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using PatientManagementApp.Model;
+using PatientManagementApp.ViewModel;
+using PatientManagementApp.Views;
 
+namespace PatientManagementApp
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private readonly PatientViewModel _viewModel = new PatientViewModel();
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel.PatientRegistered += OnPatientRegistered;
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+        }
+
+        private void btnShowRegistration_Click(object sender, RoutedEventArgs e)
+        {
+            var registration = new PatientRegistration { DataContext = _viewModel };
+            ContentArea.Content = registration;
+        }
+
+        private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
+        {
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = _viewModel };
+            ContentArea.Content = appointmentConfirmation;
+            NavigationPanel.Visibility = Visibility.Visible;
+        }
+
+        private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            var dashboard = new PatientDashboard { DataContext = _viewModel };
+            dashboard.BackToMainRequested += Dasboard_BackToMainRequested;
+            ContentArea.Content = dashboard;
+            NavigationPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void Dasboard_BackToMainRequested(object sender, EventArgs e)
+        {
+            NavigateBackToMainScreen();
+        }
+
+        private void OnPatientRegistered(object sender, Patient patient)
+        {
+            MessageBox.Show($"Patient {patient.Name} registered successfully!");
+
+            // Unsubscribe from the event to avoid multiple triggers
+            _viewModel.PatientRegistered -= OnPatientRegistered;
+            NavigateBackToMainScreen();
+        }
+
+        private void OnAppointmentConfirmed(object sender, Patient patient)
+        {
+            MessageBox.Show($"Appointment for {patient.Name} confirmed and added to the Patient Dashboard!");
+
+            // Unsubscribe from the event to avoid multiple triggers
+            _viewModel.AppointmentConfirmed -= OnAppointmentConfirmed;
+            NavigateBackToMainScreen();
+        }
+
+        private void NavigateBackToMainScreen()
+        {
+            ContentArea.Content = null;
+            NavigationPanel.Visibility = Visibility.Visible;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.ObjectModel;
+using PatientManagementApp.Model;
+
+namespace PatientManagementApp.ViewModel
+{
+    public class PatientViewModel : IPatientViewModel
+    {
+        public ObservableCollection<Patient> Patients { get; } = new ObservableCollection<Patient>();
+        public ObservableCollection<Patient> ApprovedAppointments { get; } = new ObservableCollection<Patient>();
+
+        public void RegisterPatient(Patient patient)
+        {
+            Patients.Add(patient);
+            PatientRegistered?.Invoke(this, patient);
+        }
+
+        public void ApproveAppointment(Patient patient)
+        {
+            ApprovedAppointments.Add(patient);
+            AppointmentConfirmed?.Invoke(this, patient);
+        }
+
+        public event EventHandler<Patient> PatientRegistered;
+        public event EventHandler<Patient> AppointmentConfirmed;
+    }
+}
 
 
 
