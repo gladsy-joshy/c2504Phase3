@@ -63,6 +63,3 @@ for /d %%D in ("%BACKUP_ROOT%\*") do (
 
 echo Backup completed successfully!
 pause
-
-echo Backup completed successfully!
-pause
