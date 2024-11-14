@@ -478,14 +478,16 @@ namespace PatientManagementApp
 interface
 
 using System.Collections.ObjectModel;
-using PatientManagementApp.Models;
+using PatientManagementApp.Model;
 
-namespace PatientManagementApp.Interfaces
+namespace PatientManagementApp.Interface
 {
     public interface IPatientViewModel
     {
         ObservableCollection<Patient> Patients { get; }
+        ObservableCollection<Patient> ApprovedAppointments { get; }
         void RegisterPatient(Patient patient);
+        void ApproveAppointment(Patient patient);
     }
 }
 
