@@ -520,57 +520,39 @@ namespace PatientManagementApp.Models
 mainwindow viewmodel
 ,,,,,
 
-using System;
 using System.Windows;
-using System.Windows.Controls;
-using PatientManagementApp.Views;
-using PatientManagementApp.ViewModel;
+using PatientManagementApp.View;
 
 namespace PatientManagementApp.ViewModel
 {
     public class MainWindowViewModel
     {
-        private readonly ContentControl _contentArea;
-        private readonly StackPanel _navigationPanel;
-        private readonly PatientViewModel _patientViewModel;
-
-        public MainWindowViewModel(ContentControl contentArea, StackPanel navigationPanel)
+        public void ShowRegistration(MainWindow window)
         {
-            _contentArea = contentArea;
-            _navigationPanel = navigationPanel;
-            _patientViewModel = new PatientViewModel();
+            var registrationViewModel = new PatientRegistrationViewModel();
+            var registration = new PatientRegistration { DataContext = registrationViewModel };
+            window.ContentArea.Content = registration;
         }
 
-        public void ShowRegistrationPage()
+        public void ShowAppointmentConfirmation(MainWindow window)
         {
-            var registrationPage = new PatientRegistration { DataContext = _patientViewModel };
-            _contentArea.Content = registrationPage;
+            var appointmentConfirmationViewModel = new AppointmentConfirmationViewModel();
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = appointment ConfirmationViewModel };
+            window.ContentArea.Content = appointmentConfirmation;
         }
 
-        public void ShowAppointmentConfirmationPage()
+        public void ShowDashboard(MainWindow window)
         {
-            var appointmentConfirmationPage = new AppointmentConfirmation { DataContext = _patientViewModel };
-            _contentArea.Content = appointmentConfirmationPage;
-            _navigationPanel.Visibility = Visibility.Visible;
+            var dashboardViewModel = new PatientDashboardViewModel();
+            var dashboard = new PatientDashboard { DataContext = dashboardViewModel };
+            dashboard.BackToMainRequested += (s, e) => NavigateBackToMainScreen(window);
+            window.ContentArea.Content = dashboard;
         }
 
-        public void ShowDashboardPage()
+        private void NavigateBackToMainScreen(MainWindow window)
         {
-            var dashboardPage = new PatientDashboard { DataContext = _patientViewModel };
-            dashboardPage.BackToMainRequested += OnBackToMainRequested;
-            _contentArea.Content = dashboardPage;
-            _navigationPanel.Visibility = Visibility.Collapsed;
-        }
-
-        private void OnBackToMainRequested(object sender, EventArgs e)
-        {
-            NavigateBackToMainScreen();
-        }
-
-        private void NavigateBackToMainScreen()
-        {
-            _contentArea.Content = null;
-            _navigationPanel.Visibility = Visibility.Visible;
+            window.ContentArea.Content = null;
+            window.NavigationPanel.Visibility = Visibility.Visible;
         }
     }
 }
@@ -583,90 +565,27 @@ patient registration viewmodel
 
 ,,,,,,,,,,
 
-using System;
-using System.Windows;
+using System.Collections.ObjectModel;
 using PatientManagementApp.Model;
+using System;
 
 namespace PatientManagementApp.ViewModel
 {
-    public class PatientRegistrationViewModel
+    public class PatientRegistrationViewModel : IPatientViewModel
     {
-        public event EventHandler<Patient> PatientRegistered;
+        public ObservableCollection<Patient> Patients { get; } = new ObservableCollection<Patient>();
+        public ObservableCollection<Patient> ApprovedAppointments { get; } = new ObservableCollection<Patient>();
 
-        public void ValidateName(string name, TextBlock errorTextBlock)
+        public void RegisterPatient(Patient patient)
         {
-            if (string.IsNullOrWhiteSpace(name) || !name.All(char.IsLetter))
-            {
-                errorTextBlock.Text = "Enter name with alphabets only.";
-                errorTextBlock.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                errorTextBlock.Visibility = Visibility.Collapsed;
-            }
+            Patients.Add(patient);
+            // Raise an event or perform additional logic if needed
         }
 
-        public void ValidateAge(string ageText, TextBlock errorTextBlock)
+        public void ApproveAppointment(Patient patient)
         {
-            if (string.IsNullOrWhiteSpace(ageText) || !int.TryParse(ageText, out int age) || age < 0)
-            {
-                errorTextBlock.Text = "Enter a valid age (positive integer).";
-                errorTextBlock.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                errorTextBlock.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        public void ValidateDOB(DateTime? dob, TextBlock errorTextBlock)
-        {
-            if (dob == null || dob.Value >= DateTime.Now)
-            {
-                errorTextBlock.Text = "Date of Birth must be less than today.";
-                errorTextBlock.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                errorTextBlock.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        public void ValidateBookingDate(DateTime? bookingDate, TextBlock errorTextBlock)
-        {
-            if (bookingDate == null || bookingDate.Value < DateTime.Now)
-            {
-                errorTextBlock.Text = "Booking Date must be today or later.";
-                errorTextBlock.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                errorTextBlock.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        public bool CanRegister()
-        {
-            // This would include actual validation logic checks if needed.
-            return true;
-        }
-
-        public Patient CreatePatient(string name, int age, DateTime? dob, string address, string slot, DateTime? bookingDate)
-        {
-            return new Patient
-            {
-                Name = name,
-                Age = age,
-                DOB = dob.HasValue ? dob.Value.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"),
-                Address = address,
-                Slot = slot,
-                BookingDate = bookingDate.HasValue ? bookingDate.Value.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd")
-            };
-        }
-
-        public void OnPatientRegistered(Patient patient)
-        {
-            PatientRegistered?.Invoke(this, patient);
+            ApprovedAppointments.Add(patient);
+            // Raise an event or perform additional logic if needed
         }
     }
 }
@@ -682,36 +601,24 @@ appointment confirmation viewmodel
 
 
 using System.Collections.ObjectModel;
-using System.Windows;
 using PatientManagementApp.Model;
 
 namespace PatientManagementApp.ViewModel
 {
-    public class AppointmentConfirmationViewModel
+    public class AppointmentConfirmationViewModel : IPatientViewModel
     {
-        public ObservableCollection<Patient> Patients { get; private set; }
+        public ObservableCollection<Patient> Patients { get; } = new ObservableCollection<Patient>();
+        public ObservableCollection<Patient> ApprovedAppointments { get; } = new ObservableCollection<Patient>();
 
-        public AppointmentConfirmationViewModel()
+        public void RegisterPatient(Patient patient)
         {
-            // Load patients (this would typically come from a data source)
-            Patients = new ObservableCollection<Patient>
-            {
-                new Patient { Name = "John Doe", Age = 30, Address = "123 Main St", Slot = "Morning" },
-                new Patient { Name = "Jane Smith", Age = 25, Address = "456 Elm St", Slot = "Evening" }
-            };
+            Patients.Add(patient);
         }
 
-        public void ApproveAppointment(Patient selectedPatient)
+        public void ApproveAppointment(Patient patient)
         {
-            if (selectedPatient != null)
-            {
-                // Logic to approve the appointment, such as updating a database or changing patient status
-                MessageBox.Show($"Appointment for {selectedPatient.Name} approved!");
-            }
-            else
-            {
-                MessageBox.Show("No patient selected.");
-            }
+            ApprovedAppointments.Add(patient);
+            // Raise an event or perform additional logic if needed
         }
     }
 }
@@ -729,23 +636,19 @@ using PatientManagementApp.Model;
 
 namespace PatientManagementApp.ViewModel
 {
-    public class PatientDashboardViewModel
+    public class PatientDashboardViewModel : IPatientViewModel
     {
-        public ObservableCollection<Patient> ApprovedAppointments { get; private set; }
+        public ObservableCollection<Patient> Patients { get; } = new ObservableCollection<Patient>();
+        public ObservableCollection<Patient> ApprovedAppointments { get; } = new ObservableCollection<Patient>();
 
-        public PatientDashboardViewModel()
+        public void RegisterPatient(Patient patient)
         {
-            LoadApprovedAppointments();
+            Patients.Add(patient);
         }
 
-        private void LoadApprovedAppointments()
+        public void ApproveAppointment(Patient patient)
         {
-            // This would typically involve fetching data from a database or service
-            ApprovedAppointments = new ObservableCollection<Patient>
-            {
-                new Patient { Name = "John Doe", Age = 30, Address = "123 Main St", Slot = "Morning", BookingDate = "2024-11-14" },
-                new Patient { Name = "Jane Smith", Age = 25, Address = "456 Elm St", Slot = "Evening", BookingDate = "2024-11-15" }
-            };
+            ApprovedAppointments.Add(patient);
         }
     }
 }
@@ -757,7 +660,7 @@ namespace PatientManagementApp.ViewModel
 patient registration.xaml
 
 ,,,
-<UserControl x:Class="PatientManagementApp.Views.PatientRegistration"
+<UserControl x:Class="PatientManagementApp.UserControl.PatientRegistration"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Width="383">
@@ -790,11 +693,12 @@ patient registration.xaml
                 <DatePicker x:Name="BookingDatePicker" SelectedDateChanged="BookingDatePicker_SelectedDateChanged" Margin="0,0,0,10" />
                 <TextBlock x:Name="BookingDateErrorTextBlock" Foreground="Red" Visibility="Collapsed" />
 
+                <Button ```xml
                 <Button Content="Register" Click="btnRegister_Click" Width="100" />
             </StackPanel>
         </Border>
     </Grid>
-</UserControl>
+</User Control>
 
 
 
@@ -805,64 +709,86 @@ patient registration xaml.cs
 ,,,,,
 
 
-using System;
 using System.Windows;
 using System.Windows.Controls;
 using PatientManagementApp.Model;
 using PatientManagementApp.ViewModel;
 
-namespace PatientManagementApp.Views
+namespace PatientManagementApp.UserControl
 {
     public partial class PatientRegistration : UserControl
     {
-        private readonly PatientRegistrationViewModel _viewModel;
-
         public PatientRegistration()
         {
             InitializeComponent();
-            _viewModel = new PatientRegistrationViewModel();
-            DataContext = _viewModel;
         }
 
         private void NameTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            _viewModel.ValidateName(NameTextBox.Text, NameErrorTextBlock);
+            if (string.IsNullOrWhiteSpace(NameTextBox.Text) || !NameTextBox.Text.All(char.IsLetter))
+            {
+                NameErrorTextBlock.Text = "Enter name with alphabets only.";
+                NameErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                NameErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void AgeTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            _viewModel.ValidateAge(AgeTextBox.Text, AgeErrorTextBlock);
+            if (string.IsNullOrWhiteSpace(AgeTextBox.Text) || !int.TryParse(AgeTextBox.Text, out int age) || age < 0)
+            {
+                AgeErrorTextBlock.Text = "Enter a valid age (positive integer).";
+                AgeErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                AgeErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void DOBPicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
-            _viewModel.ValidateDOB(DOBPicker.SelectedDate, DOBErrorTextBlock);
+            if (DOBPicker.SelectedDate == null || DOBPicker.SelectedDate.Value >= DateTime.Now)
+            {
+                DOBErrorTextBlock.Text = "Date of Birth must be less than today.";
+                DOBErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                DOBErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void BookingDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
-            _viewModel.ValidateBookingDate(BookingDatePicker.SelectedDate, BookingDateErrorTextBlock);
+            if (BookingDatePicker.SelectedDate == null || BookingDatePicker.SelectedDate.Value < DateTime.Now)
+            {
+                BookingDateErrorTextBlock.Text = "Booking Date must be today or later.";
+                BookingDateErrorTextBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BookingDateErrorTextBlock.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void btnRegister_Click(object sender, RoutedEventArgs e)
         {
-            if (_viewModel.CanRegister())
+            if (DataContext is PatientRegistrationViewModel viewModel)
             {
-                var patient = _viewModel.CreatePatient(
-                    NameTextBox.Text, 
-                    int.Parse(AgeTextBox.Text), 
-                    DOBPicker.SelectedDate, 
-                    AddressTextBox.Text, 
-                    SlotComboBox.Text, 
-                    BookingDatePicker.SelectedDate
-                );
-
-                MessageBox.Show($"Patient {patient.Name} registered successfully!");
-                _viewModel.OnPatientRegistered(patient);
-            }
-            else
-            {
-                MessageBox.Show("Please correct the errors before registering.");
+                var patient = new Patient
+                {
+                    Name = NameTextBox.Text,
+                    Age = int.Parse(AgeTextBox.Text),
+                    DOB = DOBPicker.SelectedDate.HasValue ? DOBPicker.SelectedDate.Value.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"),
+                    Address = AddressTextBox.Text,
+                    Slot = SlotComboBox.Text,
+                    BookingDate = BookingDatePicker.SelectedDate.HasValue ? BookingDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"),
+                };
+                viewModel.RegisterPatient(patient);
             }
         }
     }
@@ -873,17 +799,17 @@ namespace PatientManagementApp.Views
 
 appointment confirmation.xaml
 ,,,,,,,,,
-<UserControl x:Class="PatientManagementApp.Views.AppointmentConfirmation"
+<UserControl x:Class="PatientManagementApp.UserControl.AppointmentConfirmation"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Background="AliceBlue" Width="643" Height="444">
-        <TextBlock Text="Appointments to Confirm" FontWeight="Bold" FontSize="16" Margin="10" />
+        <TextBlock Text="Appointments to Confirm" FontWeight="Bold" FontSize="16" Margin="10"/>
 
-        <DataGrid Name="PatientsGrid" ItemsSource="{Binding Patients}" AutoGenerateColumns="True" 
-                  SelectionMode="Single" Height="229" Margin="10" />
+        <DataGrid Name="PatientsGrid" AutoGenerateColumns="True" 
+                  SelectionMode="Single" Height="229" Margin="10"/>
         <Button x:Name="btnApproveAppointment" Content="Give Appointment" Click="btnApproveAppointment_Click" Width="138" />
     </StackPanel>
-</UserControl>
+</User Control>
 
 
 
@@ -896,28 +822,25 @@ using System.Windows.Controls;
 using PatientManagementApp.Model;
 using PatientManagementApp.ViewModel;
 
-namespace PatientManagementApp.Views
+namespace PatientManagementApp.UserControl
 {
     public partial class AppointmentConfirmation : UserControl
     {
-        private readonly AppointmentConfirmationViewModel _viewModel;
-
         public AppointmentConfirmation()
         {
             InitializeComponent();
-            _viewModel = new AppointmentConfirmationViewModel();
-            DataContext = _viewModel;
         }
 
         private void btnApproveAppointment_Click(object sender, RoutedEventArgs e)
         {
-            if (PatientsGrid.SelectedItem is Patient selectedPatient)
+            if (DataContext is AppointmentConfirmationViewModel viewModel && PatientsGrid.SelectedItem is Patient selectedPatient)
             {
-                _viewModel.ApproveAppointment(selectedPatient);
+                viewModel.ApproveAppointment(selectedPatient);
+                MessageBox.Show($"Appointment for {selectedPatient.Name} approved!");
             }
             else
             {
-                MessageBox.Show("Please select a patient.");
+                MessageBox.Show("Please Select patient details");
             }
         }
     }
@@ -929,18 +852,18 @@ namespace PatientManagementApp.Views
 patient dashboard.xaml
 ,,,,,,
 
-<UserControl x:Class="PatientManagementApp.Views.PatientDashboard"
+<UserControl x ```xml
+<UserControl x:Class="PatientManagementApp.UserControl.PatientDashboard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
-        <TextBlock Text="Approved Appointments" FontWeight="Bold" FontSize="16" Margin="10" />
+        <TextBlock Text="Approved Appointments" FontWeight="Bold" FontSize="16" Margin="10"/>
 
-        <DataGrid Name="ApprovedAppointmentsGrid" ItemsSource="{Binding ApprovedAppointments}" 
-                  AutoGenerateColumns="True" Height="200" Margin="10" />
+        <DataGrid ItemsSource="{Binding ApprovedAppointments}" AutoGenerateColumns="True" Height="200" Margin="10"/>
 
-        <Button x:Name="btnBackToMain" Content="Exit" Click="btnBackToMain_Click" Width="57" HorizontalAlignment="Right" />
+        <Button x:Name="btnBackToMain" Content="Exit" Click="btnBackToMain_Click" Width="57" HorizontalAlignment="Right"/>
     </StackPanel>
-</UserControl>
+</User Control>
 
 
 
@@ -952,26 +875,18 @@ patient dashboard.xaml
 patient dashboard.xaml.cs
 ,,,,,,,,,,
 
-using System;
 using System.Windows;
 using System.Windows.Controls;
-using PatientManagementApp.ViewModel;
 
-namespace PatientManagementApp.Views
+namespace PatientManagementApp.UserControl
 {
-    /// <summary>
-    /// Interaction logic for PatientDashboard.xaml
-    /// </summary>
     public partial class PatientDashboard : UserControl
     {
         public event EventHandler BackToMainRequested;
-        private readonly PatientDashboardViewModel _viewModel;
 
         public PatientDashboard()
         {
             InitializeComponent();
-            _viewModel = new PatientDashboardViewModel();
-            DataContext = _viewModel;
         }
 
         private void btnBackToMain_Click(object sender, RoutedEventArgs e)
@@ -997,7 +912,6 @@ mainwindow.xaml
 <Window x:Class="PatientManagementApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:PatientManagementApp"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <StackPanel x:Name="NavigationPanel" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10">
@@ -1005,7 +919,8 @@ mainwindow.xaml
             <Button x:Name="btnShowAppointmentConfirmation" Content="Appointment Confirmation" Margin="10 20" Click="btnShowAppointmentConfirmation_Click"/>
             <Button x:Name="btnShowDashboard" Content="Patient Dashboard" Margin="10 20" Click="btnShowDashboard_Click"/>
         </StackPanel>
-        <ContentControl Name="ContentArea" Margin="10"/>
+
+        <ContentControl Name="ContentArea" Grid.Row="1" Margin="10"/>
     </Grid>
 </Window>
 
@@ -1015,11 +930,10 @@ mainwindow.xaml
 mainwindow.xaml.cs
 ,,,,,
 
-using System;
 using System.Windows;
 using PatientManagementApp.ViewModel;
 
-namespace PatientManagementApp
+namespace PatientManagementApp.View
 {
     public partial class MainWindow : Window
     {
@@ -1028,23 +942,22 @@ namespace PatientManagementApp
         public MainWindow()
         {
             InitializeComponent();
-            _viewModel = new MainWindowViewModel(ContentArea, NavigationPanel);
-            DataContext = _viewModel;
+            _viewModel = new MainWindowViewModel();
         }
 
         private void btnShowRegistration_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.ShowRegistrationPage();
+            _viewModel.ShowRegistration(this);
         }
 
         private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.ShowAppointmentConfirmationPage();
+            _viewModel.ShowAppointmentConfirmation(this);
         }
 
         private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.ShowDashboardPage();
+            _viewModel.ShowDashboard(this);
         }
     }
 }
