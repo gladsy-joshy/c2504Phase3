@@ -1069,6 +1069,63 @@ Error (active)	CS1061	'object' does not contain a definition for 'Content' and n
 
 
 
+using System;
+using System.Windows;
+using PatientManagementApp.UserControls;
+using PatientManagementApp.Models;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class MainWindowViewModel
+    {
+        public void ShowRegistration(MainWindow window)
+        {
+            var registrationViewModel = new PatientRegistrationViewModel();
+            var registration = new PatientRegistration { DataContext = registrationViewModel };
+
+            if (window.ContentArea is FrameworkElement contentControl)
+            {
+                contentControl.Content = registration;
+            }
+        }
+
+        public void ShowAppointmentConfirmation(MainWindow window)
+        {
+            var appointmentConfirmationViewModel = new AppointmentConfirmationViewModel();
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = appointmentConfirmationViewModel };
+
+            if (window.ContentArea is FrameworkElement contentControl)
+            {
+                contentControl.Content = appointmentConfirmation;
+            }
+        }
+
+        public void ShowDashboard(MainWindow window)
+        {
+            var dashboardViewModel = new PatientDashboardViewModel();
+            var dashboard = new PatientDashboard { DataContext = dashboardViewModel };
+            dashboard.BackToMainRequested += (s, e) => NavigateBackToMainScreen(window);
+
+            if (window.ContentArea is FrameworkElement contentControl)
+            {
+                contentControl.Content = dashboard;
+            }
+        }
+
+        private void NavigateBackToMainScreen(MainWindow window)
+        {
+            if (window.ContentArea is FrameworkElement contentControl)
+            {
+                contentControl.Content = null;
+            }
+            window.NavigationPanel.Visibility = Visibility.Visible;
+        }
+    }
+}
+
+
+
+
 
 
 
