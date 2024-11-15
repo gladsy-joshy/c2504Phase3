@@ -977,7 +977,88 @@ namespace PatientManagementApp.View
 
 
 
+----------------------------------------------------
 
+
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using PatientManagementApp.UserControls;
+using PatientManagementApp.ViewModels;
+using PatientManagementApp;
+using PatientManagementApp.Models;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class MainWindowViewModel
+    {
+        private readonly MainWindowViewModel _viewModel;
+
+        public void ShowRegistration(MainWindow window)
+        {
+            var registrationViewModel = new PatientRegistrationViewModel();
+            var registration = new PatientRegistration { DataContext = registrationViewModel };
+
+            window.ContentArea.Content = registration;
+        }
+
+        public void ShowAppointmentConfirmation(MainWindow window)
+        {
+            var appointmentConfirmationViewModel = new AppointmentConfirmationViewModel();
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = appointmentConfirmationViewModel };
+
+            window.ContentArea.Content = appointmentConfirmation;
+        }
+
+        public void ShowDashboard(MainWindow window)
+        {
+            var dashboardViewModel = new PatientDashboardViewModel();
+            var dashboard = new PatientDashboard { DataContext = dashboardViewModel };
+            dashboard.BackToMainRequested += (s, e) => NavigateBackToMainScreen(window);
+            window.ContentArea.Content = dashboard;
+        }
+
+        private void NavigateBackToMainScreen(MainWindow window)
+        {
+            window.ContentArea.Content = null;
+            window.NavigationPanel.Visibility = Visibility.Visible;
+        }
+
+        //private void OnPatientRegistered(object sender, PatientManagementApp1.Models.Patient patient)
+        //{
+        //    _viewModel.PatientRegistered += OnPatientRegistered;
+        //    MessageBox.Show($"Patient {patient.Name} registered successfully!");
+
+        //   // NavigateBackToMainScreen();
+        //}
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS0426	The type name 'VisualStyles' does not exist in the type 'Forms'	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\ViewModels\MainWindowViewModel.cs	12	
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS1061	'object' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?)	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\ViewModels\MainWindowViewModel.cs	25	
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS1061	'object' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?)	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\ViewModels\MainWindowViewModel.cs	25	
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS1061	'object' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?)	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\ViewModels\MainWindowViewModel.cs	46	
+Severity	Code	Description	Project	File	Line	Suppression State
+Error (active)	CS1061	'object' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?)	PatientManagementApp	C:\Users\2021470\source\repos\PatientManagementApp\PatientManagementApp\ViewModels\MainWindowViewModel.cs	41	
 
 
 
