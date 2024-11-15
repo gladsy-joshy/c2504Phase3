@@ -1197,8 +1197,7 @@ mainwindow viewmodel
 
 using System;
 using System.Collections.ObjectModel;
-using System.Windows;
-using PatientManagementApp.Models;
+using PatientManagementApp.Model;
 using PatientManagementApp.UserControls;
 
 namespace PatientManagementApp.ViewModels
@@ -1216,7 +1215,7 @@ namespace PatientManagementApp.ViewModels
 
         public void ShowRegistration(MainWindow window)
         {
-            var registrationViewModel = new PatientRegistrationViewModel(this);
+            var registrationViewModel = new PatientRegistrationViewModel();
             var registration = new PatientRegistration { DataContext = registrationViewModel };
 
             registrationViewModel.PatientRegistered += (s, patient) =>
@@ -1376,7 +1375,7 @@ namespace PatientManagementApp
         private void OnPatientRegistered(object sender, PatientManagementApp.Model.Patient patient)
         {
             MessageBox.Show($"Patient {patient.Name} registered successfully!");
-            _viewModel.PatientRegistered -= OnPatientRegistered; // Unsubscribe to prevent multiple triggers
+            _viewModel.PatientRegistered -= OnPatientRegistered; // Unsubscribe after the event fires
         }
 
         private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
@@ -1388,7 +1387,7 @@ namespace PatientManagementApp
         private void OnAppointmentConfirmed(object sender, PatientManagementApp.Model.Patient patient)
         {
             MessageBox.Show($"Appointment for {patient.Name} has been confirmed and added to the dashboard.");
-            _viewModel.AppointmentConfirmed -= OnAppointmentConfirmed; // Unsubscribe after use
+            _viewModel.AppointmentConfirmed -= OnAppointmentConfirmed; // Unsubscribe after the event fires
         }
 
         private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
@@ -1429,7 +1428,7 @@ namespace PatientManagementApp.UserControls
         {
             if (_viewModel != null)
             {
-                // Collect data from input fields (this is for illustration purposes)
+                // Collect data from input fields (for illustration purposes)
                 string name = txtName.Text;
                 int age = int.Parse(txtAge.Text);
                 string dob = txtDOB.Text;
@@ -1441,6 +1440,8 @@ namespace PatientManagementApp.UserControls
                 _viewModel.RegisterPatient(name, age, dob, address, slot, bookingDate, appointmentDate);
             }
         }
+    }
+}
     }
 }
 
@@ -1505,7 +1506,6 @@ namespace PatientManagementApp.UserControls
             _viewModel = DataContext as PatientDashboardViewModel;
         }
     }
-}
 
 
 
