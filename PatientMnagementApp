@@ -1348,6 +1348,170 @@ namespace PatientManagementApp.ViewModels
 
 
 
+mainwindow.xaml.cs
+
+
+
+using System.Windows;
+using PatientManagementApp.ViewModels;
+
+namespace PatientManagementApp
+{
+    public partial class MainWindow : Window
+    {
+        private MainWindowViewModel _viewModel;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel = new MainWindowViewModel();
+        }
+
+        private void btnRegisterPatient_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowRegistration(this);
+            _viewModel.PatientRegistered += OnPatientRegistered;
+        }
+
+        private void OnPatientRegistered(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            MessageBox.Show($"Patient {patient.Name} registered successfully!");
+            _viewModel.PatientRegistered -= OnPatientRegistered; // Unsubscribe to prevent multiple triggers
+        }
+
+        private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowAppointmentConfirmation(this);
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+        }
+
+        private void OnAppointmentConfirmed(object sender, PatientManagementApp.Model.Patient patient)
+        {
+            MessageBox.Show($"Appointment for {patient.Name} has been confirmed and added to the dashboard.");
+            _viewModel.AppointmentConfirmed -= OnAppointmentConfirmed; // Unsubscribe after use
+        }
+
+        private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDashboard(this);
+        }
+    }
+}
+
+
+
+
+
+patient registration xaml.cs
+
+
+
+
+
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using PatientManagementApp.ViewModels;
+
+namespace PatientManagementApp.UserControls
+{
+    public partial class PatientRegistration : UserControl
+    {
+        private PatientRegistrationViewModel _viewModel;
+
+        public PatientRegistration()
+        {
+            InitializeComponent();
+            _viewModel = DataContext as PatientRegistrationViewModel;
+        }
+
+        private void btnSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                // Collect data from input fields (this is for illustration purposes)
+                string name = txtName.Text;
+                int age = int.Parse(txtAge.Text);
+                string dob = txtDOB.Text;
+                string address = txtAddress.Text;
+                string slot = cmbSlot.Text;
+                DateTime bookingDate = DateTime.Now;
+                string appointmentDate = txtAppointmentDate.Text;
+
+                _viewModel.RegisterPatient(name, age, dob, address, slot, bookingDate, appointmentDate);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+appointment confirmation xaml.cs
+
+
+
+
+
+using System.Windows;
+using System.Windows.Controls;
+using PatientManagementApp.Model;
+using PatientManagementApp.ViewModels;
+
+namespace PatientManagementApp.UserControls
+{
+    public partial class AppointmentConfirmation : UserControl
+    {
+        private AppointmentConfirmationViewModel _viewModel;
+
+        public AppointmentConfirmation()
+        {
+            InitializeComponent();
+            _viewModel = DataContext as AppointmentConfirmationViewModel;
+        }
+
+        private void btnConfirmAppointment_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null && dataGridPatients.SelectedItem is Patient selectedPatient)
+            {
+                _viewModel.ConfirmAppointment(selectedPatient);
+            }
+        }
+    }
+}
+
+
+
+
+patient dashboard xaml.cs
+
+
+
+
+using System.Windows.Controls;
+using PatientManagementApp.ViewModels;
+
+namespace PatientManagementApp.UserControls
+{
+    public partial class PatientDashboard : UserControl
+    {
+        private PatientDashboardViewModel _viewModel;
+
+        public PatientDashboard()
+        {
+            InitializeComponent();
+            _viewModel = DataContext as PatientDashboardViewModel;
+        }
+    }
+}
+
+
+
+
+
+
 
 
 
