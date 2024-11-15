@@ -1134,8 +1134,216 @@ namespace PatientManagementApp.ViewModels
 
 
 
+.............
+
+mainwindow.xaml.cs
 
 
+using System.Windows;
+using PatientManagementApp.Model;
+using PatientManagementApp.ViewModels;
+
+namespace PatientManagementApp
+{
+    public partial class MainWindow : Window
+    {
+        private MainWindowViewModel _viewModel;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel = new MainWindowViewModel();
+        }
+
+        private void btnRegisterPatient_Click(object sender, RoutedEventArgs e)
+        {
+            // Show the registration form and handle registration
+            _viewModel.ShowRegistration(this);
+            _viewModel.PatientRegistered += OnPatientRegistered;
+        }
+
+        private void OnPatientRegistered(object sender, Patient patient)
+        {
+            MessageBox.Show($"Patient {patient.Name} registered successfully!");
+            _viewModel.PatientRegistered -= OnPatientRegistered; // Unsubscribe after use
+        }
+
+        private void btnShowDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDashboard(this);
+        }
+
+        private void btnShowAppointmentConfirmation_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowAppointmentConfirmation(this);
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+        }
+
+        private void OnAppointmentConfirmed(object sender, Patient patient)
+        {
+            MessageBox.Show($"Appointment for {patient.Name} has been confirmed and added to the dashboard.");
+            _viewModel.AppointmentConfirmed -= OnAppointmentConfirmed; // Unsubscribe after use
+        }
+    }
+}
+
+
+
+
+
+mainwindow viewmodel
+
+
+
+using System;
+using System.Collections.ObjectModel;
+using System.Windows;
+using PatientManagementApp.Models;
+using PatientManagementApp.UserControls;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class MainWindowViewModel
+    {
+        public ObservableCollection<Patient> Patients { get; private set; }
+        public event EventHandler<Patient> PatientRegistered;
+        public event EventHandler<Patient> AppointmentConfirmed;
+
+        public MainWindowViewModel()
+        {
+            Patients = new ObservableCollection<Patient>();
+        }
+
+        public void ShowRegistration(MainWindow window)
+        {
+            var registrationViewModel = new PatientRegistrationViewModel(this);
+            var registration = new PatientRegistration { DataContext = registrationViewModel };
+
+            registrationViewModel.PatientRegistered += (s, patient) =>
+            {
+                Patients.Add(patient);
+                PatientRegistered?.Invoke(this, patient);
+            };
+
+            window.ContentArea.Content = registration;
+        }
+
+        public void ShowAppointmentConfirmation(MainWindow window)
+        {
+            var appointmentViewModel = new AppointmentConfirmationViewModel(Patients);
+            var appointmentConfirmation = new AppointmentConfirmation { DataContext = appointmentViewModel };
+
+            appointmentViewModel.AppointmentConfirmed += (s, patient) =>
+            {
+                AppointmentConfirmed?.Invoke(this, patient);
+            };
+
+            window.ContentArea.Content = appointmentConfirmation;
+        }
+
+        public void ShowDashboard(MainWindow window)
+        {
+            var dashboardViewModel = new PatientDashboardViewModel(Patients);
+            var dashboard = new PatientDashboard { DataContext = dashboardViewModel };
+
+            window.ContentArea.Content = dashboard;
+        }
+    }
+}
+
+
+
+
+patientregistrationviewmodel
+
+
+
+using System;
+using PatientManagementApp.Model;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class PatientRegistrationViewModel
+    {
+        public event EventHandler<Patient> PatientRegistered;
+
+        public void RegisterPatient(string name, int age, string dob, string address, string slot, DateTime bookingDate, string appointmentDate)
+        {
+            var newPatient = new Patient
+            {
+                Name = name,
+                Age = age,
+                DOB = dob,
+                Address = address,
+                Slot = slot,
+                BookingDate = bookingDate,
+                AppointmentDate = appointmentDate
+            };
+
+            PatientRegistered?.Invoke(this, newPatient);
+        }
+    }
+}
+
+
+
+
+
+appointment confirmation viewmodel 
+
+
+
+using System;
+using System.Collections.ObjectModel;
+using PatientManagementApp.Model;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class AppointmentConfirmationViewModel
+    {
+        public ObservableCollection<Patient> Patients { get; }
+        public event EventHandler<Patient> AppointmentConfirmed;
+
+        public AppointmentConfirmationViewModel(ObservableCollection<Patient> patients)
+        {
+            Patients = patients;
+        }
+
+        public void ConfirmAppointment(Patient patient)
+        {
+            if (patient != null)
+            {
+                AppointmentConfirmed?.Invoke(this, patient);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+patient dashboard viewmodel
+
+
+
+using System.Collections.ObjectModel;
+using PatientManagementApp.Model;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class PatientDashboardViewModel
+    {
+        public ObservableCollection<Patient> PatientsWithAppointments { get; }
+
+        public PatientDashboardViewModel(ObservableCollection<Patient> patients)
+        {
+            // Only include patients who have confirmed appointments
+            PatientsWithAppointments = new ObservableCollection<Patient>(patients);
+        }
+    }
+}
 
 
 
