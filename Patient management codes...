@@ -1,0 +1,305 @@
+Here's the full code focusing on event handling without using ICommand or bindings, as per your request:
+
+1. MainWindow (MainWindow.xaml)
+
+<Window x:Class="YourNamespace.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Patient Admission" Height="450" Width="800">
+    <StackPanel>
+        <Button Content="Patient Registration" Click="OnPatientRegistrationClick" />
+        <Button Content="Appointment Confirmation" Click="OnAppointmentConfirmationClick" />
+        <Button Content="Patient Dashboard" Click="OnPatientDashboardClick" />
+    </StackPanel>
+</Window>
+
+2. Code-Behind (MainWindow.xaml.cs)
+
+using System;
+using System.Windows;
+using YourNamespace.UserControl;
+using YourNamespace.ViewModel;
+
+namespace YourNamespace.View
+{
+    public partial class MainWindow : Window
+    {
+        private readonly MainWindowViewModel _viewModel;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _viewModel = new MainWindowViewModel();
+            _viewModel.NavigationRequested += OnNavigationRequested;
+        }
+
+        private void OnPatientRegistrationClick(object sender, RoutedEventArgs e)
+        {
+            _viewModel.NavigateTo("PatientRegistration");
+        }
+
+        private void OnAppointmentConfirmationClick(object sender, RoutedEventArgs e)
+        {
+            _viewModel.NavigateTo("AppointmentConfirmation");
+        }
+
+        private void OnPatientDashboardClick(object sender, RoutedEventArgs e)
+        {
+            _viewModel.NavigateTo("PatientDashboard");
+        }
+
+        private void OnNavigationRequested(object sender, string viewName)
+        {
+            switch (viewName)
+            {
+                case "PatientRegistration":
+                    var registrationWindow = new PatientRegistrationUserControl();
+                    registrationWindow.Show();
+                    break;
+                case "AppointmentConfirmation":
+                    var confirmationWindow = new AppointmentConfirmationUserControl();
+                    confirmationWindow.Show();
+                    break;
+                case "PatientDashboard":
+                    var dashboardWindow = new PatientDashboardUserControl();
+                    dashboardWindow.Show();
+                    break;
+            }
+        }
+    }
+}
+
+3. MainWindow ViewModel (MainWindowViewModel.cs)
+
+using System;
+
+namespace YourNamespace.ViewModel
+{
+    public class MainWindowViewModel
+    {
+        public event EventHandler<string> NavigationRequested;
+
+        public void NavigateTo(string viewName)
+        {
+            NavigationRequested?.Invoke(this, viewName);
+        }
+    }
+}
+
+4. User Control - Patient Registration (PatientRegistrationUserControl.xaml)
+
+<UserControl x:Class="YourNamespace.UserControl.PatientRegistrationUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <StackPanel>
+            <TextBox Name="NameField" PlaceholderText="Name" />
+            <TextBox Name="AgeField" PlaceholderText="Age" />
+            <DatePicker Name="DOBField" PlaceholderText="DOB" />
+            <TextBox Name="AddressField" PlaceholderText="Address" />
+            <ComboBox Name="SlotField" PlaceholderText="Slot">
+                <ComboBoxItem Content="Morning" />
+                <ComboBoxItem Content="Evening" />
+            </ComboBox>
+            <DatePicker Name="BookingDateField" PlaceholderText="Booking Date" />
+            <Button Content="Register" Click="OnRegisterClick" />
+        </StackPanel>
+    </Grid>
+</UserControl>
+
+5. Code-Behind - Patient Registration (PatientRegistrationUserControl.xaml.cs)
+
+using System.Windows;
+using System.Windows.Controls;
+using YourNamespace.ViewModel;
+
+namespace YourNamespace.UserControl
+{
+    public partial class PatientRegistrationUserControl : UserControl
+    {
+        private readonly PatientRegistrationViewModel _viewModel;
+
+        public PatientRegistrationUserControl()
+        {
+            InitializeComponent();
+            _viewModel = new PatientRegistrationViewModel();
+            _viewModel.PatientRegistered += OnPatientRegistered;
+        }
+
+        private void OnRegisterClick(object sender, RoutedEventArgs e)
+        {
+            var patient = new PatientModel
+            {
+                Name = NameField.Text,
+                Age = int.Parse(AgeField.Text),
+                DateOfBirth = DOBField.SelectedDate.GetValueOrDefault(),
+                Address = AddressField.Text,
+                Slot = (SlotField.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                BookingDate = BookingDateField.SelectedDate.GetValueOrDefault()
+            };
+            _viewModel.RegisterPatient(patient);
+        }
+
+        private void OnPatientRegistered(object sender, string message)
+        {
+            MessageBox.Show(message, "Notification");
+        }
+    }
+}
+
+6. ViewModel - Patient Registration (PatientRegistrationViewModel.cs)
+
+using System;
+using System.Collections.ObjectModel;
+using YourNamespace.Model;
+
+namespace YourNamespace.ViewModel
+{
+    public class PatientRegistrationViewModel
+    {
+        public ObservableCollection<PatientModel> Patients { get; set; }
+        public event EventHandler<string> PatientRegistered;
+
+        public PatientRegistrationViewModel()
+        {
+            Patients = new ObservableCollection<PatientModel>();
+        }
+
+        public void RegisterPatient(PatientModel patient)
+        {
+            Patients.Add(patient);
+            PatientRegistered?.Invoke(this, "Patient registered successfully!");
+        }
+    }
+}
+
+7. User Control - Appointment Confirmation (AppointmentConfirmationUserControl.xaml)
+
+<UserControl x:Class="YourNamespace.UserControl.AppointmentConfirmationUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <DataGrid Name="PatientDataGrid" AutoGenerateColumns="True" />
+        <Button Content="Confirm Appointment" Click="OnConfirmAppointmentClick" />
+    </Grid>
+</UserControl>
+
+8. Code-Behind - Appointment Confirmation (AppointmentConfirmationUserControl.xaml.cs)
+
+using System.Windows;
+using System.Windows.Controls;
+using YourNamespace.Model;
+using YourNamespace.ViewModel;
+
+namespace YourNamespace.UserControl
+{
+    public partial class AppointmentConfirmationUserControl : UserControl
+    {
+        private readonly AppointmentConfirmationViewModel _viewModel;
+
+        public AppointmentConfirmationUserControl()
+        {
+            InitializeComponent();
+            _viewModel = new AppointmentConfirmationViewModel();
+            _viewModel.AppointmentConfirmed += OnAppointmentConfirmed;
+            PatientDataGrid.ItemsSource = _viewModel.Patients;
+        }
+
+        private void OnConfirmAppointmentClick(object sender, RoutedEventArgs e)
+        {
+            if (PatientDataGrid.SelectedItem is PatientModel selectedPatient)
+            {
+                _viewModel.ConfirmAppointment(selectedPatient);
+            }
+        }
+
+        private void OnAppointmentConfirmed(object sender, string message)
+        {
+            MessageBox.Show(message, "Notification");
+        }
+    }
+}
+
+9. ViewModel - Appointment Confirmation (AppointmentConfirmationViewModel.cs)
+
+using System;
+using System.Collections.ObjectModel;
+using YourNamespace.Model;
+
+namespace YourNamespace.ViewModel
+{
+    public class AppointmentConfirmationViewModel
+    {
+        public ObservableCollection<PatientModel> Patients { get; set; }
+        public event EventHandler<string> AppointmentConfirmed;
+
+        public AppointmentConfirmationViewModel()
+        {
+            Patients = new ObservableCollection<PatientModel>(); // Fill with data from a shared collection or service
+        }
+
+        public void ConfirmAppointment(PatientModel patient)
+        {
+            patient.IsAppointmentConfirmed = true;
+            AppointmentConfirmed?.Invoke(this, "Appointment confirmed!");
+        }
+    }
+}
+
+10. User Control - Patient Dashboard (PatientDashboardUserControl.xaml)
+
+<UserControl x:Class="YourNamespace.UserControl.PatientDashboardUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <DataGrid Name="ConfirmedAppointmentsDataGrid" AutoGenerateColumns="True" />
+        <Button Content="Exit" Click="OnExitClick" />
+    </Grid>
+</UserControl>
+
+11. Code-Behind - Patient Dashboard (PatientDashboardUserControl.xaml.cs)
+
+using System.Windows;
+using System.Windows.Controls;
+using YourNamespace.ViewModel;
+
+namespace YourNamespace.UserControl
+{
+    public partial class PatientDashboardUserControl : UserControl
+    {
+        private readonly PatientDashboardViewModel _viewModel;
+
+        public PatientDashboardUserControl()
+        {
+            InitializeComponent();
+            _viewModel = new PatientDashboardViewModel();
+            ConfirmedAppointmentsDataGrid.ItemsSource = _viewModel.ConfirmedAppointments;
+        }
+
+        private void OnExitClick(object sender, RoutedEventArgs e)
+        {
+            Window.GetWindow(this)?.Close();
+        }
+    }
+}
+
+12. ViewModel - Patient Dashboard (PatientDashboardViewModel.cs)
+
+using System.Collections.ObjectModel;
+using YourNamespace.Model;
+
+namespace YourNamespace.ViewModel
+{
+    public class PatientDashboardViewModel
+    {
+        public ObservableCollection<PatientModel> ConfirmedAppointments { get; set; }
+
+        public PatientDashboardViewModel()
+        {
+            ConfirmedAppointments = new ObservableCollection<PatientModel>(); // Fill with confirmed appointments
+        }
+    }
+}
+
+This code organizes the WPF application into event-based handling with minimal code in the XAML and code-behind files. Each ViewModel raises events that are handled in the respective user control code-behind files.
+
