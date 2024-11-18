@@ -1077,6 +1077,304 @@ Result
 3. The PatientDashboard displays the confirmed patients, all through event handling without using commands or data bindings.
 
 
+_______________&&&_&&&_______&&&______&___________&&&&______&&_________
+
+
+
+
+View/MainWindow.xaml
+
+<Window x:Class="PatientAdmissionApp.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:PatientAdmissionApp"
+        Title="Patient Admission App" Height="450" Width="800">
+    <Grid>
+        <ContentControl x:Name="MainContent" Content="{Binding CurrentView}" />
+    </Grid>
+</Window>
+
+2. View/MainWindow.xaml.cs
+
+using System.Windows;
+
+namespace PatientAdmissionApp.View
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = new ViewModel.MainWindowViewModel();
+        }
+    }
+}
+
+
+---
+
+3. UserControl/RegistrationView.xaml
+
+<UserControl x:Class="PatientAdmissionApp.UserControl.RegistrationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBox PlaceholderText="Enter Patient Name" Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox PlaceholderText="Enter Age" Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}" />
+        <Button Content="Register" Click="RegisterButton_Click" />
+    </StackPanel>
+</UserControl>
+
+4. UserControl/RegistrationView.xaml.cs
+
+using System.Windows.Controls;
+
+namespace PatientAdmissionApp.UserControl
+{
+    public partial class RegistrationView : UserControl
+    {
+        public RegistrationView()
+        {
+            InitializeComponent();
+        }
+
+        private void RegisterButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ((ViewModel.RegistrationViewModel)DataContext).RegisterPatient();
+        }
+    }
+}
+
+
+---
+
+5. UserControl/AppointmentView.xaml
+
+<UserControl x:Class="PatientAdmissionApp.UserControl.AppointmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBox PlaceholderText="Enter Appointment Details" Text="{Binding AppointmentDetails, UpdateSourceTrigger=PropertyChanged}" />
+        <Button Content="Confirm Appointment" Click="ConfirmButton_Click" />
+    </StackPanel>
+</UserControl>
+
+6. UserControl/AppointmentView.xaml.cs
+
+using System.Windows.Controls;
+
+namespace PatientAdmissionApp.UserControl
+{
+    public partial class AppointmentView : UserControl
+    {
+        public AppointmentView()
+        {
+            InitializeComponent();
+        }
+
+        private void ConfirmButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ((ViewModel.AppointmentViewModel)DataContext).ConfirmAppointment();
+        }
+    }
+}
+
+
+---
+
+7. UserControl/DashboardView.xaml
+
+<UserControl x:Class="PatientAdmissionApp.UserControl.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <ListBox ItemsSource="{Binding PatientsList}" />
+        <Button Content="Update Dashboard" Click="UpdateButton_Click" />
+    </StackPanel>
+</UserControl>
+
+8. UserControl/DashboardView.xaml.cs
+
+using System.Windows.Controls;
+
+namespace PatientAdmissionApp.UserControl
+{
+    public partial class DashboardView : UserControl
+    {
+        public DashboardView()
+        {
+            InitializeComponent();
+        }
+
+        private void UpdateButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ((ViewModel.DashboardViewModel)DataContext).UpdateDashboard();
+        }
+    }
+}
+
+
+---
+
+9. ViewModel/MainWindowViewModel.cs
+
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows;
+
+namespace PatientAdmissionApp.ViewModel
+{
+    public class MainWindowViewModel : INotifyPropertyChanged
+    {
+        private object _currentView;
+
+        public object CurrentView
+        {
+            get => _currentView;
+            set
+            {
+                _currentView = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public RegistrationViewModel RegistrationVM { get; }
+        public AppointmentViewModel AppointmentVM { get; }
+        public DashboardViewModel DashboardVM { get; }
+
+        public MainWindowViewModel()
+        {
+            RegistrationVM = new RegistrationViewModel();
+            AppointmentVM = new AppointmentViewModel();
+            DashboardVM = new DashboardViewModel();
+
+            // Set initial view
+            CurrentView = RegistrationVM;
+        }
+
+        public void ShowRegistration()
+        {
+            CurrentView = RegistrationVM;
+        }
+
+        public void ShowAppointment()
+        {
+            CurrentView = AppointmentVM;
+        }
+
+        public void ShowDashboard()
+        {
+            CurrentView = DashboardVM;
+        }
+
+        public void ExitApplication()
+        {
+            Application.Current.Shutdown();
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+}
+
+
+---
+
+10. ViewModel/RegistrationViewModel.cs
+
+namespace PatientAdmissionApp.ViewModel
+{
+    public class RegistrationViewModel
+    {
+        public string PatientName { get; set; }
+        public int Age { get; set; }
+
+        public void RegisterPatient()
+        {
+            if (!string.IsNullOrEmpty(PatientName) && Age > 0)
+            {
+                System.Windows.MessageBox.Show($"Patient '{PatientName}' registered successfully!");
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Please provide valid patient information.");
+            }
+        }
+    }
+}
+
+
+---
+
+11. ViewModel/AppointmentViewModel.cs
+
+namespace PatientAdmissionApp.ViewModel
+{
+    public class AppointmentViewModel
+    {
+        public string AppointmentDetails { get; set; }
+
+        public void ConfirmAppointment()
+        {
+            if (!string.IsNullOrEmpty(AppointmentDetails))
+            {
+                System.Windows.MessageBox.Show($"Appointment confirmed: {AppointmentDetails}");
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Please provide appointment details.");
+            }
+        }
+    }
+}
+
+
+---
+
+12. ViewModel/DashboardViewModel.cs
+
+using System.Collections.ObjectModel;
+
+namespace PatientAdmissionApp.ViewModel
+{
+    public class DashboardViewModel
+    {
+        public ObservableCollection<string> PatientsList { get; private set; }
+
+        public DashboardViewModel()
+        {
+            PatientsList = new ObservableCollection<string>
+            {
+                "Patient 1 - John Doe",
+                "Patient 2 - Jane Smith",
+                "Patient 3 - Bob Johnson"
+            };
+        }
+
+        public void UpdateDashboard()
+        {
+            PatientsList.Add($"Patient {PatientsList.Count + 1} - New Entry");
+            System.Windows.MessageBox.Show("Dashboard updated!");
+        }
+    }
+}
+
+
+---
+
+Summary
+
+MainWindow is located under the View folder, containing the main window UI logic.
+
+User Controls (RegistrationView, AppointmentView, DashboardView) are placed under the UserControl folder.
+
+ViewModels (including MainWindowViewModel, RegistrationViewModel, AppointmentViewModel, and DashboardViewModel) handle the logic for their respective views.
+
+Code-behind is minimal in the UserControl files, with only event handlers to trigger ViewModel methods.
 
 
 
