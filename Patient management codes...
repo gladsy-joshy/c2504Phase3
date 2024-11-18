@@ -874,5 +874,210 @@ namespace PatientManagementApp
 
 
 
+_-------------_--------_--------_----------_-------------
+
+
+
+
+Updated ViewModels
+
+PatientRegistrationViewModel
+
+Ensure the PatientRegistered event is raised with the registered patient data.
+
+using System;
+using System.Collections.ObjectModel;
+using PatientManagementApp.Models;
+using PatientManagementApp.Services;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class PatientRegistrationViewModel
+    {
+        private readonly PatientDataService _patientDataService;
+
+        public ObservableCollection<Patient> Patients => _patientDataService.Patients;
+        public event EventHandler<Patient> PatientRegistered;
+
+        public PatientRegistrationViewModel(PatientDataService patientDataService)
+        {
+            _patientDataService = patientDataService;
+        }
+
+        public void RegisterPatient(Patient patient)
+        {
+            _patientDataService.Patients.Add(patient);
+            PatientRegistered?.Invoke(this, patient);
+        }
+    }
+}
+
+AppointmentConfirmationViewModel
+
+Add an event to notify the selection of a confirmed patient.
+
+using System;
+using System.Collections.ObjectModel;
+using PatientManagementApp.Models;
+using PatientManagementApp.Services;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class AppointmentConfirmationViewModel
+    {
+        private readonly PatientDataService _patientDataService;
+
+        public ObservableCollection<Patient> Patients => _patientDataService.Patients;
+        public Patient SelectedPatient { get; set; }
+        public event EventHandler<Patient> AppointmentConfirmed;
+
+        public AppointmentConfirmationViewModel(PatientDataService patientDataService)
+        {
+            _patientDataService = patientDataService;
+        }
+
+        public void ConfirmAppointment()
+        {
+            if (SelectedPatient != null)
+            {
+                AppointmentConfirmed?.Invoke(this, SelectedPatient);
+            }
+        }
+    }
+}
+
+PatientDashboardViewModel
+
+Handle the event from the AppointmentConfirmationViewModel to update the dashboard.
+
+using System.Collections.ObjectModel;
+using PatientManagementApp.Models;
+
+namespace PatientManagementApp.ViewModels
+{
+    public class PatientDashboardViewModel
+    {
+        public ObservableCollection<Patient> ConfirmedAppointments { get; set; }
+
+        public PatientDashboardViewModel()
+        {
+            ConfirmedAppointments = new ObservableCollection<Patient>();
+        }
+
+        public void OnAppointmentConfirmed(object sender, Patient patient)
+        {
+            if (patient != null && !ConfirmedAppointments.Contains(patient))
+            {
+                ConfirmedAppointments.Add(patient);
+            }
+        }
+    }
+}
+
+MainWindow Setup
+
+Modify MainWindow.xaml.cs to wire up the events between ViewModels.
+
+namespace PatientManagementApp
+{
+    public partial class MainWindow : Window
+    {
+        private readonly MainWindowViewModel _viewModel;
+        private readonly PatientDataService _patientDataService;
+        private readonly AppointmentConfirmationViewModel _appointmentConfirmationViewModel;
+        private readonly PatientDashboardViewModel _patientDashboardViewModel;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            _patientDataService = new PatientDataService();
+            _viewModel = new MainWindowViewModel();
+            _appointmentConfirmationViewModel = new AppointmentConfirmationViewModel(_patientDataService);
+            _patientDashboardViewModel = new PatientDashboardViewModel();
+
+            _viewModel.NavigationRequested += OnNavigationRequested;
+
+            // Wire up event handling
+            _appointmentConfirmationViewModel.AppointmentConfirmed += _patientDashboardViewModel.OnAppointmentConfirmed;
+        }
+
+        private void OnNavigationRequested(object sender, string viewName)
+        {
+            switch (viewName)
+            {
+                case "PatientRegistration":
+                    var registrationViewModel = new PatientRegistrationViewModel(_patientDataService);
+                    registrationViewModel.PatientRegistered += OnPatientRegistered;
+                    MainContent.Content = new PatientRegistration
+                    {
+                        DataContext = registrationViewModel
+                    };
+                    break;
+                case "AppointmentConfirmation":
+                    MainContent.Content = new AppointmentConfirmation
+                    {
+                        DataContext = _appointmentConfirmationViewModel
+                    };
+                    break;
+                case "PatientDashboard":
+                    MainContent.Content = new PatientDashboard
+                    {
+                        DataContext = _patientDashboardViewModel
+                    };
+                    break;
+            }
+        }
+
+        private void OnPatientRegistered(object sender, Patient patient)
+        {
+            // Optionally handle any additional logic when a patient is registered.
+        }
+    }
+}
+
+UserControl XAML and Code-Behind
+
+AppointmentConfirmation.xaml.cs
+
+Add an event handler for the button click.
+
+private void ConfirmAppointmentButton_Click(object sender, RoutedEventArgs e)
+{
+    if (DataContext is AppointmentConfirmationViewModel viewModel)
+    {
+        viewModel.ConfirmAppointment();
+    }
+}
+
+AppointmentConfirmation.xaml
+
+Bind the SelectedItem property to SelectedPatient and wire up the button event.
+
+<UserControl x:Class="PatientManagementApp.UserControls.AppointmentConfirmation"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <DataGrid ItemsSource="{Binding Patients}" 
+                  SelectedItem="{Binding SelectedPatient}" 
+                  AutoGenerateColumns="True" />
+        <Button Content="Confirm Appointment" 
+                Click="ConfirmAppointmentButton_Click" 
+                Margin="10" VerticalAlignment="Bottom" />
+    </Grid>
+</UserControl>
+
+Result
+
+1. Registered patients are shown on the AppointmentConfirmation page.
+
+
+2. Selecting a patient and clicking the "Confirm Appointment" button raises an event that updates the PatientDashboard.
+
+
+3. The PatientDashboard displays the confirmed patients, all through event handling without using commands or data bindings.
+
+
+
+
 
 
