@@ -437,6 +437,184 @@ namespace PatientAdmissionApp
 
 
 
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+1. MainWindowViewModel.cs
+
+Contains RelayCommand for view navigation.
+Maintains event handling for updating the registration, appointment, and dashboard logic.
+csharp
+Copy code
+public class MainWindowViewModel : BaseViewModel
+{
+    private BaseViewModel _currentViewModel;
+    private readonly PatientRegistrationControlViewModel _registrationViewModel;
+    private readonly AppointmentControlViewModel _appointmentViewModel;
+    private readonly PatientDashboardViewModel _dashboardViewModel;
+
+    public BaseViewModel CurrentViewModel
+    {
+        get => _currentViewModel;
+        set { _currentViewModel = value; OnPropertyChanged(); }
+    }
+
+    public ICommand ShowRegistrationCommand { get; }
+    public ICommand ShowAppointmentCommand { get; }
+    public ICommand ShowDashboardCommand { get; }
+    public ICommand ExitCommand { get; }
+
+    public MainWindowViewModel()
+    {
+        _registrationViewModel = new PatientRegistrationControlViewModel();
+        _appointmentViewModel = new AppointmentControlViewModel();
+        _dashboardViewModel = new PatientDashboardViewModel();
+
+        // Event subscriptions
+        _registrationViewModel.PatientRegistered += OnPatientRegistered;
+        _appointmentViewModel.PatientConfirmed += OnPatientConfirmed;
+
+        ShowRegistrationCommand = new RelayCommand(ShowRegistration);
+        ShowAppointmentCommand = new RelayCommand(ShowAppointment);
+        ShowDashboardCommand = new RelayCommand(ShowDashboard);
+        ExitCommand = new RelayCommand(_ => System.Windows.Application.Current.Shutdown());
+
+        // Set default view
+        ShowRegistration(null);
+    }
+
+    private void OnPatientRegistered(object sender, PatientModel e)
+    {
+        _appointmentViewModel.Patients.Add(e);
+    }
+
+    private void OnPatientConfirmed(object sender, PatientModel e)
+    {
+        _dashboardViewModel.AddConfirmedPatient(e);
+    }
+
+    private void ShowRegistration(object parameter) => CurrentViewModel = _registrationViewModel;
+    private void ShowAppointment(object parameter) => CurrentViewModel = _appointmentViewModel;
+    private void ShowDashboard(object parameter) => CurrentViewModel = _dashboardViewModel;
+}
+2. PatientRegistrationControlViewModel.cs
+
+Handles the registration logic and triggers an event when a patient is registered.
+csharp
+Copy code
+public class PatientRegistrationControlViewModel : BaseViewModel
+{
+    public event EventHandler<PatientModel> PatientRegistered;
+
+    public ObservableCollection<PatientModel> Patients { get; set; }
+    public PatientModel NewPatient { get; set; }
+
+    public PatientRegistrationControlViewModel()
+    {
+        Patients = new ObservableCollection<PatientModel>();
+        NewPatient = new PatientModel();
+    }
+
+    public void RegisterPatient()
+    {
+        if (!string.IsNullOrEmpty(NewPatient.Name) && NewPatient.Dateofbirth != default)
+        {
+            var registeredPatient = new PatientModel
+            {
+                Name = NewPatient.Name,
+                Dateofbirth = NewPatient.Dateofbirth,
+                Age = DateTime.Now.Year - NewPatient.Dateofbirth.Year,
+                Address = NewPatient.Address,
+                Slot = NewPatient.Slot,
+                BookingDate = NewPatient.BookingDate
+            };
+            Patients.Add(registeredPatient);
+            PatientRegistered?.Invoke(this, registeredPatient);
+            MessageBox.Show($"Patient {NewPatient.Name} registered successfully.");
+            NewPatient = new PatientModel();
+        }
+        else
+        {
+            MessageBox.Show("Please provide valid patient details.");
+        }
+    }
+}
+3. AppointmentControlViewModel.cs
+
+Listens for row selection and triggers an event for confirmation.
+csharp
+Copy code
+public class AppointmentControlViewModel : BaseViewModel
+{
+    public event EventHandler<PatientModel> PatientConfirmed;
+
+    public ObservableCollection<PatientModel> Patients { get; set; }
+    public PatientModel SelectedPatient { get; set; }
+
+    public AppointmentControlViewModel()
+    {
+        Patients = new ObservableCollection<PatientModel>();
+    }
+
+    public void ConfirmAppointment()
+    {
+        if (SelectedPatient != null)
+        {
+            SelectedPatient.ConfirmationStatus = "Confirmed";
+            PatientConfirmed?.Invoke(this, SelectedPatient);
+            MessageBox.Show($"Appointment confirmed for {SelectedPatient.Name}");
+        }
+        else
+        {
+            MessageBox.Show("Please select a patient.");
+        }
+    }
+}
+4. PatientDashboardViewModel.cs
+
+Handles the logic for displaying confirmed patients.
+csharp
+Copy code
+public class PatientDashboardViewModel : BaseViewModel
+{
+    public ObservableCollection<PatientModel> ConfirmedPatients { get; set; }
+
+    public PatientDashboardViewModel()
+    {
+        ConfirmedPatients = new ObservableCollection<PatientModel>();
+    }
+
+    public void AddConfirmedPatient(PatientModel patient)
+    {
+        if (patient != null && !ConfirmedPatients.Contains(patient))
+        {
+            ConfirmedPatients.Add(patient);
+            OnPropertyChanged(nameof(ConfirmedPatients));
+        }
+    }
+}
+5. MainWindow.xaml
+
+Bind the RelayCommand to buttons for navigation.
+xml
+Copy code
+<Window x:Class="PatientAdmissionApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Patient Admission App" Height="450" Width="800">
+    <Grid>
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Registration" Command="{Binding ShowRegistrationCommand}" />
+            <Button Content="Appointment" Command="{Binding ShowAppointmentCommand}" />
+            <Button Content="Dashboard" Command="{Binding ShowDashboardCommand}" />
+        </StackPanel>
+        <ContentControl Content="{Binding CurrentViewModel}" />
+    </Grid>
+</Window>
+
 
 
 
