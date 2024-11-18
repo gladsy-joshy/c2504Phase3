@@ -1,0 +1,443 @@
+RelayCommand.cs (if not already defined)
+------------------------------------
+
+
+using System;
+using System.Windows.Input;
+
+namespace PatientAdmissionApp
+{
+    public class RelayCommand : ICommand
+    {
+        private readonly Action<object> _execute;
+        private readonly Predicate<object> _canExecute;
+
+        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object parameter)
+        {
+            return _canExecute == null || _canExecute(parameter);
+        }
+
+        public void Execute(object parameter)
+        {
+            _execute(parameter);
+        }
+
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+    }
+}
+
+
+MainWindowViewModel.cs (with event subscription)
+---------------------------------------------------
+
+
+public class MainWindowViewModel : BaseViewModel
+{
+    private BaseViewModel _currentViewModel;
+    private readonly PatientRegistrationControlViewModel _registrationViewModel;
+    private readonly AppointmentControlViewModel _appointmentViewModel;
+    private readonly PatientDashboardViewModel _dashboardViewModel;
+
+    public BaseViewModel CurrentViewModel
+    {
+        get => _currentViewModel;
+        set { _currentViewModel = value; OnPropertyChanged(); }
+    }
+
+    public ICommand ShowRegistrationCommand { get; }
+    public ICommand ShowAppointmentCommand { get; }
+    public ICommand ShowDashboardCommand { get; }
+    public ICommand ExitCommand { get; }
+
+    public MainWindowViewModel()
+    {
+        _registrationViewModel = new PatientRegistrationControlViewModel();
+        _appointmentViewModel = new AppointmentControlViewModel();
+        _dashboardViewModel = new PatientDashboardViewModel();
+
+        // Event handling setup
+        _registrationViewModel.PatientRegistered += OnPatientRegistered;
+        _appointmentViewModel.AppointmentUpdated += OnAppointmentUpdated;
+
+        ShowRegistrationCommand = new RelayCommand(ShowRegistration);
+        ShowAppointmentCommand = new RelayCommand(ShowAppointment);
+        ShowDashboardCommand = new RelayCommand(ShowDashboard);
+        ExitCommand = new RelayCommand(_ => System.Windows.Application.Current.Shutdown());
+
+        ShowRegistration(null); // Default view
+    }
+
+    private void OnPatientRegistered(object sender, PatientModel e)
+    {
+        _appointmentViewModel.Patients.Add(e);
+        _dashboardViewModel.AddConfirmedPatient(e);
+    }
+
+    private void OnAppointmentUpdated(object sender, EventArgs e)
+    {
+        // Additional logic for when an appointment is updated
+    }
+
+    private void ShowRegistration(object parameter)
+    {
+        CurrentViewModel = _registrationViewModel;
+    }
+
+    private void ShowAppointment(object parameter)
+    {
+        CurrentViewModel = _appointmentViewModel;
+    }
+
+    private void ShowDashboard(object parameter)
+    {
+        CurrentViewModel = _dashboardViewModel;
+    }
+}
+
+PatientRegistrationControlViewModel.cs (with RelayCommand for event triggering)
+-------------------------------------------------
+
+csharp
+Copy code
+public class PatientRegistrationControlViewModel : BaseViewModel
+{
+    public ObservableCollection<PatientModel> Patients { get; set; }
+    public PatientModel NewPatient { get; set; }
+
+    public event EventHandler<PatientModel> PatientRegistered;
+
+    public ICommand RegisterPatientCommand { get; }
+
+    public PatientRegistrationControlViewModel()
+    {
+        Patients = new ObservableCollection<PatientModel>();
+        NewPatient = new PatientModel();
+        RegisterPatientCommand = new RelayCommand(RegisterPatient);
+    }
+
+    private void RegisterPatient(object parameter)
+    {
+        if (!string.IsNullOrEmpty(NewPatient.Name) && NewPatient.Dateofbirth != default)
+        {
+            var newPatient = new PatientModel
+            {
+                Name = NewPatient.Name,
+                Dateofbirth = NewPatient.Dateofbirth,
+                Age = DateTime.Now.Year - NewPatient.Dateofbirth.Year,
+                Address = NewPatient.Address,
+                Slot = NewPatient.Slot,
+                BookingDate = NewPatient.BookingDate
+            };
+
+            Patients.Add(newPatient);
+            PatientRegistered?.Invoke(this, newPatient);
+
+            MessageBox.Show($"Patient {NewPatient.Name} registered successfully.");
+            NewPatient = new PatientModel();
+            OnPropertyChanged(nameof(NewPatient));
+        }
+        else
+        {
+            MessageBox.Show("Please provide valid patient details.");
+        }
+    }
+}
+
+AppointmentControlViewModel.cs (with event triggering)
+--------------------------------------
+
+csharp
+Copy code
+public class AppointmentControlViewModel : BaseViewModel
+{
+    public ObservableCollection<PatientModel> Patients { get; set; }
+    public PatientModel SelectedPatient { get; set; }
+
+    public event EventHandler AppointmentUpdated;
+
+    public ICommand UpdateAppointmentCommand { get; }
+
+    public AppointmentControlViewModel()
+    {
+        Patients = new ObservableCollection<PatientModel>();
+        UpdateAppointmentCommand = new RelayCommand(param => UpdateAppointment(SelectedPatient));
+    }
+
+    public void UpdateAppointment(PatientModel patient)
+    {
+        if (patient != null)
+        {
+            patient.ConfirmationStatus = "Confirmed";
+            OnPropertyChanged(nameof(Patients));
+            AppointmentUpdated?.Invoke(this, EventArgs.Empty);
+        }
+    }
+}
+These updates ensure that event handling and RelayCommand are integrated across the application for proper event-driven interaction and command functionality.
+
+
+
+
+Model
+PatientModel.cs
+-------------------------
+
+csharp
+Copy code
+using System;
+
+namespace PatientAdmissionApp
+{
+    public class PatientModel
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public DateTime Dateofbirth { get; set; } = DateTime.Now;
+        public string Address { get; set; }
+        public string BookingDate { get; set; }
+        public string AppointmentDate { get; set; }
+        public string ConfirmationStatus { get; set; } = "Pending";
+        public string Slot { get; set; }
+    }
+}
+
+Interface
+IPatient.cs
+----------------
+
+csharp
+Copy code
+using System.Collections.ObjectModel;
+
+namespace PatientAdmissionApp
+{
+    public interface IPatient
+    {
+        ObservableCollection<PatientModel> Patients { get; }
+        void RegisterPatient(object parameter);
+        void SendUpdate(object parameter);
+    }
+}
+
+ViewModels
+BaseViewModel.cs
+---------------------
+
+csharp
+Copy code
+using System.ComponentModel;
+
+namespace PatientAdmissionApp
+{
+    public class BaseViewModel : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+}
+
+MainWindowViewModel.cs
+-------------------------
+
+csharp
+Copy code
+using System.Windows.Input;
+
+namespace PatientAdmissionApp
+{
+    public class MainWindowViewModel : BaseViewModel
+    {
+        private BaseViewModel _currentViewModel;
+        public BaseViewModel CurrentViewModel
+        {
+            get => _currentViewModel;
+            set { _currentViewModel = value; OnPropertyChanged(); }
+        }
+
+        public ICommand ShowRegistrationCommand { get; }
+        public ICommand ShowAppointmentCommand { get; }
+        public ICommand ShowDashboardCommand { get; }
+        public ICommand ExitCommand { get; }
+
+        public MainWindowViewModel()
+        {
+            ShowRegistrationCommand = new RelayCommand(ShowRegistration);
+            ShowAppointmentCommand = new RelayCommand(ShowAppointment);
+            ShowDashboardCommand = new RelayCommand(ShowDashboard);
+            ExitCommand = new RelayCommand(_ => System.Windows.Application.Current.Shutdown());
+
+            ShowRegistration(null); // Default view
+        }
+
+        private void ShowRegistration(object parameter)
+        {
+            CurrentViewModel = new PatientRegistrationControlViewModel();
+        }
+
+        private void ShowAppointment(object parameter)
+        {
+            CurrentViewModel = new AppointmentControlViewModel();
+        }
+
+        private void ShowDashboard(object parameter)
+        {
+            CurrentViewModel = new PatientDashboardViewModel();
+        }
+    }
+}
+
+PatientRegistrationControlViewModel.cs
+-------------------------------------
+
+csharp
+Copy code
+using System.Collections.ObjectModel;
+using System.Windows;
+
+namespace PatientAdmissionApp
+{
+    public class PatientRegistrationControlViewModel : BaseViewModel
+    {
+        public ObservableCollection<PatientModel> Patients { get; set; }
+        public PatientModel NewPatient { get; set; }
+
+        public event EventHandler<PatientModel> PatientRegistered;
+
+        public ICommand RegisterPatientCommand { get; }
+
+        public PatientRegistrationControlViewModel()
+        {
+            Patients = new ObservableCollection<PatientModel>();
+            NewPatient = new PatientModel();
+            RegisterPatientCommand = new RelayCommand(RegisterPatient);
+        }
+
+        private void RegisterPatient(object parameter)
+        {
+            if (!string.IsNullOrEmpty(NewPatient.Name) && NewPatient.Dateofbirth != default)
+            {
+                Patients.Add(new PatientModel
+                {
+                    Name = NewPatient.Name,
+                    Dateofbirth = NewPatient.Dateofbirth,
+                    Age = DateTime.Now.Year - NewPatient.Dateofbirth.Year,
+                    Address = NewPatient.Address,
+                    Slot = NewPatient.Slot,
+                    BookingDate = NewPatient.BookingDate
+                });
+
+                PatientRegistered?.Invoke(this, NewPatient);
+                MessageBox.Show($"Patient {NewPatient.Name} registered successfully.");
+                NewPatient = new PatientModel();
+                OnPropertyChanged(nameof(NewPatient));
+            }
+            else
+            {
+                MessageBox.Show("Please provide valid patient details.");
+            }
+        }
+    }
+}
+
+AppointmentControlViewModel.cs
+-------------------------------
+
+csharp
+Copy code
+using System.Collections.ObjectModel;
+
+namespace PatientAdmissionApp
+{
+    public class AppointmentControlViewModel : BaseViewModel
+    {
+        public ObservableCollection<PatientModel> Patients { get; set; }
+        public PatientModel SelectedPatient { get; set; }
+
+        public event EventHandler AppointmentUpdated;
+
+        public AppointmentControlViewModel()
+        {
+            Patients = new ObservableCollection<PatientModel>();
+        }
+
+        public void UpdateAppointment(PatientModel patient)
+        {
+            if (patient != null)
+            {
+                patient.ConfirmationStatus = "Confirmed";
+                OnPropertyChanged(nameof(Patients));
+                AppointmentUpdated?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+}
+
+PatientDashboardViewModel.cs
+----------------------------
+
+csharp
+Copy code
+using System.Collections.ObjectModel;
+
+namespace PatientAdmissionApp
+{
+    public class PatientDashboardViewModel : BaseViewModel
+    {
+        public ObservableCollection<PatientModel> ConfirmedPatients { get; set; }
+
+        public PatientDashboardViewModel()
+        {
+            ConfirmedPatients = new ObservableCollection<PatientModel>();
+        }
+
+        public void AddConfirmedPatient(PatientModel patient)
+        {
+            if (patient != null && !ConfirmedPatients.Contains(patient))
+            {
+                ConfirmedPatients.Add(patient);
+                OnPropertyChanged(nameof(ConfirmedPatients));
+            }
+        }
+    }
+}
+
+Views
+MainWindow.xaml.cs
+----------------------
+
+csharp
+Copy code
+using System.Windows;
+
+namespace PatientAdmissionApp
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = new MainWindowViewModel();
+        }
+    }
+}
+
+
+
+
+
+
+
